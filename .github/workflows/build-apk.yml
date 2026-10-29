@@ -4,15 +4,43 @@ name: Build Electric Pro APK
 on:
   workflow_dispatch:
   push:
-    paths:
-      - "ElectricPro_Android_Project_Mobile_Build.zip"
+    branches: ["main"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Show uploaded files
-        run: ls -la
+      - name: Extract Android project
+        run: |
+          unzip ElectricPro_Android_Project_Mobile_Build.zip -d extracted
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Build APK
+        working-directory: extracted/ElectricPro_Android_Project
+        run: gradle assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ElectricPro-debug-APK
+          path: extracted/ElectricPro_Android_Project/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
